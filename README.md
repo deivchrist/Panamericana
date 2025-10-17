@@ -58,9 +58,23 @@ El prototipo inicial se enfoca en el siguiente flujo de usuario, demostrando la 
 
 El diseño de la interfaz y la experiencia de usuario (UI/UX), junto con el prototipo interactivo, se encuentran disponibles en el siguiente enlace de Figma:
 
-**➡️ Enlace al Prototipo:** `https://warm-cape-44568504.figma.site`
+**➡️ Enlace al Prototipo:** `https://warm-cape-44568504.figma.
 
----
+##  Arquitectura del Proyecto
+
+```
+com.proyecto.panamericana/
+├── navigation/              
+│   ├── AppNavigation.kt
+├── ui/                      
+│   ├── MainScreen.kt        
+│   └── screens/             
+│       ├── DetailScreem.kt
+│       ├── FavoriteScren.kt
+│       ├── HomeScreen.kt
+└── MainActivity.kt          
+
+```
 
 ## 👥 Equipo de Desarrollo
 
