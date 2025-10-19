@@ -1,11 +1,10 @@
 package com.panamericana.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,49 +13,75 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.panamericana.app.R // Asegúrate de que este import exista
 import com.panamericana.app.data.sampleCategories
-import com.panamericana.app.data.sampleRecommendations
-import com.panamericana.app.model.Category
-import com.panamericana.app.model.Recommendation
+import com.panamericana.app.model.Place
+import com.panamericana.app.ui.viewmodel.HomeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
-    // El Column permite apilar elementos verticalmente
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        TopBar()
-        Spacer(modifier = Modifier.height(16.dp))
-        SearchBar()
-        Spacer(modifier = Modifier.height(24.dp))
-        CategoriesSection()
-        Spacer(modifier = Modifier.height(24.dp))
-        RecommendationsSection(navController = navController)
-    }
-}
+fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
+    val places by viewModel.places.collectAsState()
 
-@Composable
-fun TopBar() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = "Hola, Deivid", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        IconButton(onClick = { /* TODO: Navegar al perfil */ }) {
-            Icon(imageVector = Icons.Default.Person, contentDescription = "Perfil")
+    // Scaffold nos da la estructura profesional con barra superior, contenido, etc.
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    // Carga el logo desde la carpeta res/drawable
+                    // Asegúrate de que tu logo se llame 'logo.png' o cambia el nombre aquí
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo de la App",
+                        modifier = Modifier.height(32.dp)
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Navegar a la pantalla de perfil */ }) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { paddingValues ->
+        // LazyColumn es la forma correcta y más eficiente de crear listas verticales
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues), // Padding para que el contenido no quede detrás de la TopBar
+            contentPadding = PaddingValues(vertical = 16.dp)
+        ) {
+            // Cada sección de la pantalla es ahora un 'item' en la lista perezosa
+            item {
+                SearchBar()
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            item {
+                CategoriesSection(navController = navController)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            item {
+                RecommendationsSection(navController = navController, places = places)
+            }
         }
     }
 }
@@ -64,97 +89,104 @@ fun TopBar() {
 @Composable
 fun SearchBar() {
     OutlinedTextField(
-        value = "",
-        onValueChange = {},
+        value = "", onValueChange = {},
         placeholder = { Text("Buscar eventos, lugares, comida...") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
-        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(24.dp)
     )
 }
 
+
 @Composable
-fun CategoriesSection() {
-    Column {
-        Text(text = "Categorías", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+fun CategoriesSection(navController: NavController) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = "Categorías",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(modifier = Modifier.height(16.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            items(sampleCategories) { category ->
-                CategoryCard(category = category)
+            sampleCategories.forEach { category ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { navController.navigate("list/${category.title}") }
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = category.icon,
+                            contentDescription = category.title,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .size(32.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = category.title, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }
 }
 
 @Composable
-fun CategoryCard(category: Category) {
-    Card(
-        modifier = Modifier.size(width = 160.dp, height = 100.dp),
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(imageVector = category.icon, contentDescription = category.name, modifier = Modifier.size(32.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = category.name, fontWeight = FontWeight.Medium)
-        }
-    }
-}
-
-@Composable
-fun RecommendationsSection(navController: NavController) {
+fun RecommendationsSection(navController: NavController, places: List<Place>) {
     Column {
-        Text(text = "Recomendado para ti", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = "Recomendado para ti",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
         Spacer(modifier = Modifier.height(16.dp))
         LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(sampleRecommendations) { recommendation ->
-                RecommendationCard(
-                    recommendation = recommendation,
-                    onClick = {
-                        // RF14: Navegar a la pantalla de detalle al hacer clic
-                        navController.navigate("detail")
-                    }
-                )
+            items(places) { place ->
+                PlaceCard(place = place, onClick = {
+                    navController.navigate("detail/${place.id}")
+                })
             }
         }
     }
 }
 
 @Composable
-fun RecommendationCard(recommendation: Recommendation, onClick: () -> Unit) {
+fun PlaceCard(place: Place, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .width(220.dp)
-            .clickable(onClick = onClick), // RF12: Botón interactivo (toda la tarjeta)
-        shape = RoundedCornerShape(16.dp)
+        modifier = Modifier.width(240.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
             AsyncImage(
-                model = recommendation.imageUrl,
-                contentDescription = recommendation.title,
+                model = place.imageUrls.first(),
+                contentDescription = place.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    .height(140.dp),
                 contentScale = ContentScale.Crop
             )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = recommendation.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = recommendation.subtitle, fontSize = 12.sp, color = Color.Gray)
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(text = place.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(text = place.shortDescription, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = recommendation.rating.toString(), fontWeight = FontWeight.Bold)
+                    Text(text = place.rating.toString(), fontWeight = FontWeight.Bold)
                 }
             }
         }

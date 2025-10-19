@@ -3,13 +3,16 @@ package com.panamericana.app.model
 import androidx.compose.ui.graphics.vector.ImageVector
 
 data class Category(
-    val name: String,
+    val title: String,
     val icon: ImageVector
 )
 
-data class Recommendation(
+data class Place(
+    val id: Int,
     val title: String,
-    val subtitle: String,
+    val shortDescription: String,
+    val longDescription: String,
     val rating: Float,
-    val imageUrl: String
+    val category: String,
+    val imageUrls: List<String>
 )
