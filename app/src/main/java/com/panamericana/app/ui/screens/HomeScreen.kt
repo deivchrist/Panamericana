@@ -23,24 +23,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import com.panamericana.app.R // Asegúrate de que este import exista
+import com.panamericana.app.R
 import com.panamericana.app.data.sampleCategories
-import com.panamericana.app.model.Place
+import com.panamericana.app.model.DiscoverableItem
+import com.panamericana.app.model.GameEvent
+import com.panamericana.app.model.Restaurant
+import com.panamericana.app.model.TouristSpot
 import com.panamericana.app.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
-    val places by viewModel.places.collectAsState()
+    val recommendedItems by viewModel.recommendedItems.collectAsState()
+    val eventItems by viewModel.eventItems.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
-    // Scaffold nos da la estructura profesional con barra superior, contenido, etc.
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    // Carga el logo desde la carpeta res/drawable
-                    // Asegúrate de que tu logo se llame 'logo.png' o cambia el nombre aquí
                     Image(
                         painter = painterResource(id = R.drawable.logo),
                         contentDescription = "Logo de la App",
@@ -48,29 +49,23 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Navegar a la pantalla de perfil */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Perfil"
-                        )
+                    IconButton(onClick = { navController.navigate("profile") }) {
+                        Icon(imageVector = Icons.Default.Person, contentDescription = "Perfil")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { paddingValues ->
-        // LazyColumn es la forma correcta y más eficiente de crear listas verticales
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues), // Padding para que el contenido no quede detrás de la TopBar
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            // Cada sección de la pantalla es ahora un 'item' en la lista perezosa
             item {
-                SearchBar()
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { viewModel.onSearchQueryChange(it) }
+                )
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
@@ -80,21 +75,29 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
             }
 
             item {
-                RecommendationsSection(navController = navController, places = places)
+                if (recommendedItems.isNotEmpty()) {
+                    RecommendationsSection(navController = navController, items = recommendedItems)
+                } else {
+                    EmptyState()
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            item {
+                EventsSection(navController = navController, events = eventItems)
             }
         }
     }
 }
 
 @Composable
-fun SearchBar() {
+fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
     OutlinedTextField(
-        value = "", onValueChange = {},
-        placeholder = { Text("Buscar eventos, lugares, comida...") },
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Buscar por nombre o categoría...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape = RoundedCornerShape(24.dp)
     )
 }
@@ -127,9 +130,7 @@ fun CategoriesSection(navController: NavController) {
                         Icon(
                             imageVector = category.icon,
                             contentDescription = category.title,
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .size(32.dp)
+                            modifier = Modifier.padding(16.dp).size(32.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -141,7 +142,7 @@ fun CategoriesSection(navController: NavController) {
 }
 
 @Composable
-fun RecommendationsSection(navController: NavController, places: List<Place>) {
+fun RecommendationsSection(navController: NavController, items: List<DiscoverableItem>) {
     Column {
         Text(
             text = "Recomendado para ti",
@@ -154,9 +155,9 @@ fun RecommendationsSection(navController: NavController, places: List<Place>) {
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(places) { place ->
-                PlaceCard(place = place, onClick = {
-                    navController.navigate("detail/${place.id}")
+            items(items) { item ->
+                ItemCard(item = item, onClick = {
+                    navController.navigate("detail/${item.id}")
                 })
             }
         }
@@ -164,31 +165,96 @@ fun RecommendationsSection(navController: NavController, places: List<Place>) {
 }
 
 @Composable
-fun PlaceCard(place: Place, onClick: () -> Unit) {
+fun ItemCard(item: DiscoverableItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier.width(240.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            AsyncImage(
-                model = place.imageUrls.first(),
-                contentDescription = place.title,
+            // CAMBIO: Se usa Image con painterResource para cargar la imagen local
+            Image(
+                painter = painterResource(id = item.imageResIds.first()),
+                contentDescription = item.title,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp),
                 contentScale = ContentScale.Crop
             )
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(text = place.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                Text(text = place.shortDescription, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(item.shortDescription, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = place.rating.toString(), fontWeight = FontWeight.Bold)
+
+                val rating = when (item) {
+                    is Restaurant -> item.rating
+                    is TouristSpot -> item.rating
+                    else -> null
+                }
+                if (rating != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(rating.toString(), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EventsSection(navController: NavController, events: List<DiscoverableItem>) {
+    Column {
+        Text(
+            text = "Eventos Próximos",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(events) { event ->
+                EventCard(event = event as GameEvent, onClick = { navController.navigate("detail/${event.id}") })
+            }
+        }
+    }
+}
+
+@Composable
+fun EventCard(event: GameEvent, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.width(280.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // CAMBIO: Se usa Image con painterResource para cargar la imagen local
+            Image(
+                painter = painterResource(id = event.imageResIds.first()),
+                contentDescription = event.title,
+                modifier = Modifier.size(100.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(event.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(event.location, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(event.date, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyState() {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "No se encontraron resultados para tu búsqueda.")
     }
 }

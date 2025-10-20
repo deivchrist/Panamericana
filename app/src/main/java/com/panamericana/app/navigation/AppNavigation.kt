@@ -19,26 +19,28 @@ fun AppNavigation() {
         composable("home") {
             HomeScreen(navController = navController, viewModel = homeViewModel)
         }
-        // NUEVA RUTA: Recibe el nombre de la categoría para mostrar una lista
         composable(
             route = "list/{categoryName}",
             arguments = listOf(navArgument("categoryName") { type = NavType.StringType })
         ) { backStackEntry ->
-            val categoryName = backStackEntry.arguments?.getString("categoryName")
-            requireNotNull(categoryName)
-            val places = homeViewModel.getPlacesByCategory(categoryName)
-            ListScreen(navController = navController, places = places, categoryName = categoryName)
+            val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+            val items = homeViewModel.getItemsByCategory(categoryName)
+            ListScreen(navController = navController, items = items, categoryName = categoryName)
         }
         composable(
-            route = "detail/{placeId}",
-            arguments = listOf(navArgument("placeId") { type = NavType.IntType })
+            route = "detail/{itemId}",
+            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("placeId")
-            requireNotNull(id)
-            val place = homeViewModel.getPlaceById(id)
-            if (place != null) {
-                DetailScreen(navController = navController, place = place)
+            val id = backStackEntry.arguments?.getInt("itemId") ?: 0
+            val item = homeViewModel.getItemById(id)
+            if (item != null) {
+                // CAMBIO CLAVE: Se elimina 'as Place' y se pasa el 'item' directamente.
+                // El parámetro ahora se llama 'item', no 'place'.
+                DetailScreen(navController = navController, item = item)
             }
+        }
+        composable("profile") {
+            ProfileScreen(navController = navController)
         }
     }
 }
