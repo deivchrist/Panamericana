@@ -67,20 +67,47 @@ El prototipo visual inicial que sirvió como base para el desarrollo se puede co
 
 **➡️ Enlace al Prototipo:** `https://warm-cape-44568504.figma.
 
-##  Arquitectura del Proyecto
+## 🏛️ Arquitectura del Proyecto
+
+El proyecto sigue una arquitectura MVVM (Model-View-ViewModel) con una clara separación de responsabilidades, organizada en los siguientes paquetes principales:
 
 ```
-com.proyecto.panamericana/
-├── navigation/              
-│   ├── AppNavigation.kt
-├── ui/                      
-│   ├── MainScreen.kt        
-│   └── screens/             
-│       ├── DetailScreem.kt
-│       ├── FavoriteScren.kt
-│       ├── HomeScreen.kt
-└── MainActivity.kt          
-
+com.panamericana.app/
+├── data/                      
+│   ├── SampleData.kt        
+│   └── UserPreferencesRepository.kt 
+├── model/                    
+│   └── AppModels.kt
+├── navigation/               
+│   └── AppNavigation.kt      
+├── ui/                        
+│   ├── screens/              
+│   │   ├── booking/        
+│   │   │   ├── ConfirmationScreen.kt
+│   │   │   ├── PaymentScreen.kt
+│   │   │   └── SeatSelectionScreen.kt
+│   │   ├── restaurant/      
+│   │   │   ├── MenuScreen.kt
+│   │   │   ├── OrderSummaryScreen.kt
+│   │   │   └── RestaurantConfirmationScreen.kt
+│   │   ├── DetailScreen.kt
+│   │   ├── EditProfileScreen.kt
+│   │   ├── HomeScreen.kt
+│   │   ├── ListScreen.kt
+│   │   ├── LoginScreen.kt
+│   │   ├── ProfileScreen.kt
+│   │   └── RegisterScreen.kt
+│   ├── theme/                
+│   │   ├── Color.kt
+│   │   ├── Theme.kt
+│   │   └── Typography.kt
+│   └── viewmodel/             
+│       ├── AuthViewModel.kt
+│       ├── BookingViewModel.kt
+│       ├── HomeViewModel.kt
+│       ├── ProfileViewModel.kt
+│       └── RestaurantViewModel.kt
+└── MainActivity.kt              
 ```
 
 ## 👥 Equipo de Desarrollo
