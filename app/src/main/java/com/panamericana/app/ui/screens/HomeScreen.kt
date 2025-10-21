@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -172,14 +173,16 @@ fun ItemCard(item: DiscoverableItem, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            // CAMBIO: Se usa Image con painterResource para cargar la imagen local
-            Image(
-                painter = painterResource(id = item.imageResIds.first()),
+            // Usar AsyncImage de Coil para gestionar placeholder/error automáticamente
+            AsyncImage(
+                model = item.imageResIds.first(),
                 contentDescription = item.title,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_launcher_foreground),
+                error = painterResource(id = R.drawable.ic_launcher_foreground)
             )
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
@@ -232,12 +235,14 @@ fun EventCard(event: GameEvent, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // CAMBIO: Se usa Image con painterResource para cargar la imagen local
-            Image(
-                painter = painterResource(id = event.imageResIds.first()),
+            // Usar AsyncImage de Coil para gestionar placeholder/error automáticamente
+            AsyncImage(
+                model = event.imageResIds.first(),
                 contentDescription = event.title,
                 modifier = Modifier.size(100.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_launcher_foreground),
+                error = painterResource(id = R.drawable.ic_launcher_foreground)
             )
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(event.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
@@ -248,6 +253,8 @@ fun EventCard(event: GameEvent, onClick: () -> Unit) {
         }
     }
 }
+
+// Nota: usamos Coil AsyncImage para carga con placeholder/error
 
 @Composable
 fun EmptyState() {
